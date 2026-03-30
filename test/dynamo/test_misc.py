@@ -4052,6 +4052,19 @@ not ___dict_contains('cccccccc', G['sys'].modules)""",
         res = opt_fn(mv_out_op, torch.empty(0), torch.ones(3, 3), torch.ones(3))
         self.assertEqual(ref, res)
 
+    def test_empty_with_out_tensor_resize_dynamic(self):
+        # torch.empty(..., out=...) should resize the out tensor to match the
+        # requested size under torch.compile(dynamic=True), consistent with eager.
+        def f(size, out):
+            return torch.empty(size, out=out, dtype=torch.float32)
+
+        cf = torch.compile(f, dynamic=True)
+
+        out = torch.empty([1])
+        result = cf([2, 3], out)
+        self.assertEqual(result.shape, torch.Size([2, 3]))
+        self.assertIs(result, out)
+
     def test_mutable_mapping_multiple_inheritance(self):
         class MyWeirdDict(collections.abc.MutableMapping, torch.nn.Module):
             def __init__(self, **kwargs):

@@ -5266,10 +5266,18 @@ def new_full(
 
 @aten.empty.out.py_impl(DispatchKey.CompositeImplicitAutograd)
 def empty_out(
-    size: TensorLikeType,
+    size: ShapeType,
     out: TensorLikeType,
     memory_format: torch.memory_format | None = None,
 ) -> TensorLikeType:
+    torch._check(
+        memory_format is None,
+        lambda: "'memory_format' argument is incompatible with 'out' tensor argument",
+    )
+    if out.is_sparse():
+        out.sparse_resize_and_clear_(size, len(size), 0)
+    else:
+        out.resize_(size)
     return out
 
 
